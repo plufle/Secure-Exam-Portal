@@ -1,0 +1,52 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    margin: 0 6rem;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 1rem;
+}
+
+.header-title-container{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-icon{
+    font-size: 3.2rem;
+    color: #006C75;
+}
+
+.header-title{
+    font-size: 3.2rem;
+    color: #006C75;
+    letter-spacing: 1px;
+}
+
+.header-left{
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.status-container{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #F1F5F9;
+    padding: 0.5rem;
+    border-radius: 1rem;
+}
+.status-dot{
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+}
+
+.status-text{
+    font-size: 1.4rem;
+    color: #006C75;
+}

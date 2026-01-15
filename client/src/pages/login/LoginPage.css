@@ -1,0 +1,26 @@
+.login-page {
+    background-color: #FCFCFC;
+    min-height: 100vh;
+    min-width: 100vw;
+    padding: 2rem;
+}
+
+.login-container {
+    margin: 7.8rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.login-text-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+}
+
+.login-text-subtitle {
+    font-size: 1.8rem;
+    font-weight: 400;
+    color: #006C75;
+    margin-bottom:2rem;
+}
