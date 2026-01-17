@@ -1,7 +1,7 @@
 import "./Button.css";
-function Button({text,width}) {
+function Button({text,width, onClick}) {
     return (
-        <button className="button" style={{width}}>{text}</button>
+        <button className="button" style={{width}} onClick={onClick}>{text}</button>
     );
 }
 export default Button;

@@ -2,7 +2,7 @@ import "./Input.css";
 import { useState } from "react";
 import { MdVisibility, MdVisibilityOff } from "react-icons/md";
 
-function Input({ type, placeholder, label }) {
+function Input({ type, placeholder, label,value,onChange}) {
   const [showPassword, setShowPassword] = useState(false);
 
   const isPassword = type === "password";
@@ -21,6 +21,8 @@ function Input({ type, placeholder, label }) {
           type={inputType}
           placeholder={placeholder}
           className="input"
+          value={value}
+          onChange={onChange}
         />
 
         {isPassword && (
