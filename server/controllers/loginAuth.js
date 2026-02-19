@@ -27,13 +27,15 @@ exports.login = async (req, res) => {
         if (!user) {
             return res.status(400).json({ error: "User not found" });
         }
+        if (user.type !== type) {
+            return res.status(400).json({ error: "Invalid type" });
+        }
+        console.log(bcrypt.decodeBase64(user.password));
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(400).json({ error: "Invalid password" });
         }
-        if (user.type !== type) {
-            return res.status(400).json({ error: "Invalid type" });
-        }
+
         const token = jwt.sign({ name }, process.env.JWT_SECRET, { expiresIn: "1h" });
         res.status(200).json({ token });
     } catch (error) {
