@@ -1,5 +1,6 @@
 const ClassRoom = require("../models/ClassRoom");
 const Student = require("../models/StudentSchema");
+const Test = require("../models/Test");
 const { encrypt } = require("../utils/crypto");
 
 exports.addClassRoom = async (req, res) => {
@@ -149,6 +150,75 @@ exports.editClassRoom = async (req, res) => {
             const field = Object.keys(error.keyValue)[0];
             return res.status(400).json({ error: `An entry with this ${field} already exists.` });
         }
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.addTest = async (req, res) => {
+    try {
+        const { testName, classroomId, date, time, duration, totalMarks, questions } = req.body;
+        const test = await Test.create({
+            testName,
+            classroomId,
+            date,
+            time,
+            duration,
+            totalMarks,
+            questions
+        });
+        res.status(201).json({ test });
+    } catch (error) {
+        console.error("ADD TEST ERROR:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getTests = async (req, res) => {
+    try {
+        const tests = await Test.find().populate("classroomId", "name"); // populate the classroom name if needed
+        res.status(200).json({ tests });
+    } catch (error) {
+        console.error("GET TESTS ERROR:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.editTest = async (req, res) => {
+    try {
+        const { testId, testName, classroomId, date, time, duration, totalMarks, questions } = req.body;
+        const test = await Test.findById(testId);
+        if (!test) {
+            return res.status(404).json({ message: "Test not found" });
+        }
+
+        test.testName = testName || test.testName;
+        test.classroomId = classroomId || test.classroomId;
+        test.date = date || test.date;
+        test.time = time || test.time;
+        test.duration = duration || test.duration;
+        test.totalMarks = totalMarks || test.totalMarks;
+        if (questions) {
+            test.questions = questions;
+        }
+
+        await test.save();
+        res.status(200).json({ message: "Test updated successfully", test });
+    } catch (error) {
+        console.error("EDIT TEST ERROR:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.deleteTest = async (req, res) => {
+    try {
+        const { testId } = req.body;
+        const test = await Test.findByIdAndDelete(testId);
+        if (!test) {
+            return res.status(404).json({ message: "Test not found" });
+        }
+        res.status(200).json({ message: "Test deleted successfully", test });
+    } catch (error) {
+        console.error("DELETE TEST ERROR:", error);
         res.status(500).json({ error: error.message });
     }
 };

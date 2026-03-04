@@ -1,7 +1,7 @@
 import "./ClassRoom.css";
 import { useState, useEffect } from "react";
 import { MdDelete } from "react-icons/md";
-import { addClassroom, getClassroom, deleteClassroom, editClassroom } from "../../../services/Classroom";
+import { addClassroom, getClassroom, deleteClassroom, editClassroom } from "../../../services/Admin";
 
 function ClassRoom() {
     const [showform, setShowForm] = useState(false);
