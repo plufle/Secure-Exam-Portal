@@ -1,6 +1,7 @@
 import "./ClassRoom.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MdDelete } from "react-icons/md";
+import { addClassroom, getClassroom, deleteClassroom, editClassroom } from "../../../services/Classroom";
 
 function ClassRoom() {
     const [showform, setShowForm] = useState(false);
@@ -8,11 +9,18 @@ function ClassRoom() {
     const [classroomName, setClassroomName] = useState("");
     const [students, setStudents] = useState([{ regno: "", email: "" }]);
     const [selectedClassroom, setSelectedClassroom] = useState(null);
+    const [classrooms, setClassrooms] = useState([]);
+    const [isEditMode, setIsEditMode] = useState(false);
 
-    const dummyStudents = [
-        { regno: "REG001", email: "student1@example.com" },
-        { regno: "REG002", email: "student2@example.com" },
-    ];
+    const fetchClassrooms = () => {
+        getClassroom().then(res => {
+            setClassrooms(res.classrooms);
+        }).catch(console.error);
+    };
+
+    useEffect(() => {
+        fetchClassrooms();
+    }, []);
 
     const handleAddStudent = () => {
         setStudents([...students, { regno: "", email: "" }]);
@@ -29,11 +37,72 @@ function ClassRoom() {
         setStudents(newStudents);
     };
 
-    const handleViewStudents = (classroom) => {
-        setSelectedClassroom(classroom);
+    const handleViewStudents = (classroomId) => {
+        setSelectedClassroom(classroomId);
         setShowViewStudents(true);
     };
 
+    const openAddClassroom = () => {
+        setIsEditMode(false);
+        setClassroomName("");
+        setStudents([{ regno: "", email: "" }]);
+        setSelectedClassroom(null);
+        setShowForm(true);
+    };
+
+    const handleEditClassroom = (classroom) => {
+        setIsEditMode(true);
+        setClassroomName(classroom.name);
+        setSelectedClassroom(classroom._id);
+        const mappedStudents = classroom.students.map(s => ({
+            regno: s.regNo || s.regno,
+            email: s.email
+        }));
+        setStudents(mappedStudents.length > 0 ? mappedStudents : [{ regno: "", email: "" }]);
+        setShowForm(true);
+    };
+
+    const handleAddClassroom = () => {
+        setShowForm(false);
+        const req = {
+            name: classroomName,
+            students: students
+        };
+
+        if (isEditMode) {
+            req.classroomId = selectedClassroom;
+            editClassroom(req)
+                .then(res => {
+                    console.log(res);
+                    fetchClassrooms();
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+        } else {
+            addClassroom(req)
+                .then(res => {
+                    console.log(res.data);
+                    fetchClassrooms();
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+        }
+    };
+
+    const handleDeleteClassroom = (classroomId) => {
+        if (window.confirm("Are you sure you want to delete this classroom?")) {
+            deleteClassroom(classroomId)
+                .then(res => {
+                    console.log(res);
+                    fetchClassrooms();
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+        }
+    };
     return (
         <div className="classroom-container">
             <div className="classroom-header">
@@ -42,7 +111,7 @@ function ClassRoom() {
                     <p className="classroom-header-text">Manage your classrooms</p>
                 </div>
                 <div className="classroom-header-right">
-                    <button className="classroom-header-button" onClick={() => setShowForm(true)}>Add Classroom</button>
+                    <button className="classroom-header-button" onClick={openAddClassroom}>Add Classroom</button>
                 </div>
             </div>
 
@@ -51,7 +120,7 @@ function ClassRoom() {
                 <div className="overlay">
                     <div className="classroom-form">
                         <div className="classroom-form-header">
-                            <h1 className="classroom-form-title">Add Classroom</h1>
+                            <h1 className="classroom-form-title">{isEditMode ? "Edit Classroom" : "Add Classroom"}</h1>
                             <button className="classroom-form-close" onClick={() => setShowForm(false)}>Close</button>
                         </div>
                         <div className="classroom-form-body">
@@ -97,7 +166,7 @@ function ClassRoom() {
                         </div>
                         <div className="classroom-form-footer">
                             <button className="classroom-form-button" onClick={() => setShowForm(false)}>Cancel</button>
-                            <button className="classroom-form-button">Add</button>
+                            <button className="classroom-form-button" onClick={handleAddClassroom}>{isEditMode ? "Save" : "Add"}</button>
                         </div>
                     </div>
                 </div>
@@ -120,11 +189,15 @@ function ClassRoom() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {dummyStudents.map((std, i) => (
-                                        <tr key={i}>
-                                            <td>{std.regno}</td>
-                                            <td>{std.email}</td>
-                                        </tr>
+                                    {classrooms.map((classroom, i) => (
+                                        selectedClassroom === classroom._id && (
+                                            classroom.students.map((student, j) => (
+                                                <tr key={j}>
+                                                    <td>{student.regNo}</td>
+                                                    <td>{student.email}</td>
+                                                </tr>
+                                            ))
+                                        )
                                     ))}
                                 </tbody>
                             </table>
@@ -143,15 +216,17 @@ function ClassRoom() {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr className="classroomtable-tr">
-                            <td className="classroomtable-td">ClassRoom 1</td>
-                            <td className="classroomtable-td">10</td>
-                            <td className="classroomtable-td button-container">
-                                <button className="classroomtable-td-button" onClick={() => handleViewStudents({ name: "ClassRoom 1" })}>View</button>
-                                <button className="classroomtable-td-button">Edit</button>
-                                <button className="classroomtable-td-button">Delete</button>
-                            </td>
-                        </tr>
+                        {classrooms && classrooms.map((classroom, index) => (
+                            <tr key={index} className="classroomtable-tr">
+                                <td className="classroomtable-td">{classroom.name}</td>
+                                <td className="classroomtable-td">{classroom.students.length}</td>
+                                <td className="classroomtable-td button-container">
+                                    <button className="classroomtable-td-button" onClick={() => handleViewStudents(classroom._id)}>View</button>
+                                    <button className="classroomtable-td-button" onClick={() => handleEditClassroom(classroom)}>Edit</button>
+                                    <button className="classroomtable-td-button" onClick={() => handleDeleteClassroom(classroom._id)}>Delete</button>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>

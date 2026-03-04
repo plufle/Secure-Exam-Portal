@@ -21,7 +21,6 @@ exports.register = async (req, res) => {
 // Login
 exports.login = async (req, res) => {
     const { name, type, password } = req.body;
-    console.log(req.body);
     try {
         const user = await User.findOne({ name });
         if (!user) {
@@ -30,7 +29,6 @@ exports.login = async (req, res) => {
         if (user.type !== type) {
             return res.status(400).json({ error: "Invalid type" });
         }
-        console.log(bcrypt.decodeBase64(user.password));
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(400).json({ error: "Invalid password" });
