@@ -1,0 +1,152 @@
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 26rem 1fr;
+    grid-template-rows: 6rem 1fr;     
+    height: 100vh;
+}
+
+.sidebar {
+    grid-row: 1 / -1;  
+    background-color: #fff;
+    border-right: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.4rem;
+}
+
+.brand-icon {
+    font-size: 3.2rem;
+    color: #006C75;
+}
+
+.brand-title {
+    font-size: 3rem;
+    color: #006C75;
+}
+
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+}
+
+.nav-menu ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-menu li {
+    cursor: pointer;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 2rem;
+    border-radius: 10px;
+    transition: all 0.3s ease-in-out;
+    color: #006C75;
+}
+
+.nav-item:hover {
+    color: #00565e;
+    background-color: #f7fcfd;
+}
+
+.nav-item.active {
+    background-color: #006C75;
+    color: #fff;
+}
+
+
+.nav-icon {
+    font-size: 2rem;
+    color: inherit;
+}
+
+.nav-label {
+    font-size: 2rem;
+    color: inherit;
+}
+
+.sidebar-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.logout-btn {
+    background-color: #006C75;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 5px;
+    font-size: 2rem;
+    transition: all 0.3s ease-in-out;
+}
+
+.logout-btn:hover {
+    background-color: #00565e;
+}
+
+.top-bar {
+    background-color: #FCFCFC;
+    border-bottom: 1px solid #eee;
+    display: grid;
+    grid-template-columns: 1fr 20rem;
+    align-items: center;
+}
+
+.top-bar-title {
+    font-size: 2rem;
+    color: #006C75;
+    font-style: italic;
+    padding: 1.4rem;
+    justify-self: center;
+}
+
+.top-bar-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-right: 4rem;
+    justify-self: end;
+}
+
+.top-bar-icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+}
+
+
+.top-bar-subtitle {
+    font-size: 2rem;
+    color: #000;
+}
+
+.top-bar-text {
+    font-size: 1.5rem;
+    color: #696969;
+}
+
+.main-content {
+    background-color: #FCFCFC;
+    padding: 20px;
+}

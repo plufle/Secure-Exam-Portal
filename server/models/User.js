@@ -13,6 +13,10 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true
+    },
+    lastLogin: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true});
 

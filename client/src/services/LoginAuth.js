@@ -12,6 +12,10 @@ export const login = async (name, type, password) => {
 
     localStorage.setItem("token", response.data.token);
     localStorage.setItem("type", type);
+    localStorage.setItem("name", name);
+    if (response.data.lastLogin) {
+      localStorage.setItem("lastLogin", response.data.lastLogin);
+    }
     return { success: true, data: response.data };
 
   } catch (error) {
@@ -32,4 +36,6 @@ export const login = async (name, type, password) => {
 
 export const logout = () => {
   localStorage.removeItem("token");
+  localStorage.removeItem("type");
+  localStorage.removeItem("name");
 };
