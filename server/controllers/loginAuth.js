@@ -34,8 +34,12 @@ exports.login = async (req, res) => {
             return res.status(400).json({ error: "Invalid password" });
         }
 
+        // Update last login timestamp
+        user.lastLogin = new Date();
+        await user.save();
+
         const token = jwt.sign({ name }, process.env.JWT_SECRET, { expiresIn: "1h" });
-        res.status(200).json({ token });
+        res.status(200).json({ token, lastLogin: user.lastLogin });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
