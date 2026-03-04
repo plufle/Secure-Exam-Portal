@@ -1,15 +1,20 @@
 const mongoose = require("mongoose");
+const { encrypt, decrypt } = require("../utils/crypto");
 
 const studentSchema = new mongoose.Schema({
   regNo: {
     type: String,
-    required: true
+    required: true,
+    set: encrypt,
+    get: decrypt
   },
 
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    set: encrypt,
+    get: decrypt
   },
 
   classroom: [{
@@ -17,6 +22,10 @@ const studentSchema = new mongoose.Schema({
     ref: "ClassRoom"
   }]
 
-}, { timestamps: true });
+}, { 
+  timestamps: true,
+  toJSON: { getters: true },
+  toObject: { getters: true }
+});
 
 module.exports = mongoose.model("Student", studentSchema);

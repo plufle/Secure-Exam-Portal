@@ -11,7 +11,6 @@ function LoginForm() {
     const navigate = useNavigate();
     const handleLogin = async () => {
         const data = await login(username, userType, password);
-        console.log(localStorage.getItem("token"));
         if(data.success){
             if(userType === "student"){
                 navigate("/student-dashboard",{replace:true});

@@ -1,31 +1,40 @@
 const ClassRoom = require("../models/ClassRoom");
 const Student = require("../models/StudentSchema");
+const { encrypt } = require("../utils/crypto");
 
 exports.addClassRoom = async (req, res) => {
     const { name, students } = req.body;
     try {
-        console.log("BODY:", req.body);
-        console.log("STUDENTS:", req.body.students);
-        console.log("TYPE:", typeof req.body.students);
         const classroom = await ClassRoom.create({ name });
         const studentIds = await Promise.all(
             students.map(async (studentData) => {
-                console.log("Creating student:", studentData);
+                let student = await Student.findOne({ email: studentData.email });
 
-                const student = await Student.create({
-                    regNo: studentData.regno,
-                    email: studentData.email,
-                    classroom: classroom._id
-                });
+                if (student) {
+                    if (!student.classroom.includes(classroom._id)) {
+                        student.classroom.push(classroom._id);
+                        await student.save();
+                    }
+                } else {
+                    student = await Student.create({
+                        regNo: studentData.regno || studentData.regNo,
+                        email: studentData.email,
+                        classroom: [classroom._id]
+                    });
+                }
 
                 return student._id;
             })
         );
-        console.log(studentIds);
         classroom.students = studentIds;
         await classroom.save();
         res.status(201).json({ classroom });
     } catch (error) {
+        console.error("ADD CLASSROOM ERROR:", error);
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyValue)[0];
+            return res.status(400).json({ error: `An entry with this ${field} already exists.` });
+        }
         res.status(500).json({ error: error.message });
     }
 };
@@ -55,8 +64,18 @@ exports.deleteClassRoom = async (req, res) => {
             return res.status(404).json({ message: "Classroom not found" });
         }
 
-        // delete related students
-        await Student.deleteMany({ classroom: classroomId });
+        // Remove classroom reference from all its students
+        const studentsInClass = await Student.find({ classroom: classroomId });
+        await Promise.all(studentsInClass.map(async (student) => {
+            student.classroom = student.classroom.filter(
+                id => id.toString() !== classroomId.toString()
+            );
+            if (student.classroom.length === 0) {
+                await Student.findByIdAndDelete(student._id);
+            } else {
+                await student.save();
+            }
+        }));
 
         res.status(200).json({
             message: "Classroom and students deleted",
@@ -83,17 +102,34 @@ exports.editClassRoom = async (req, res) => {
         }
 
         if (students && students.length > 0) {
-            // Delete old students
-            await Student.deleteMany({ classroom: classroomId });
+            // Remove classroom reference from current students
+            const currentStudents = await Student.find({ classroom: classroomId });
+            await Promise.all(currentStudents.map(async (student) => {
+                student.classroom = student.classroom.filter(
+                    id => id.toString() !== classroomId.toString()
+                );
+                if (student.classroom.length === 0) {
+                    await Student.findByIdAndDelete(student._id);
+                } else {
+                    await student.save();
+                }
+            }));
             
-            // Re-create new students
+            // Re-create or reuse students based on input
             const studentIds = await Promise.all(
                 students.map(async (studentData) => {
-                    const student = await Student.create({
-                        regNo: studentData.regno || studentData.regNo,
-                        email: studentData.email,
-                        classroom: classroom._id
-                    });
+                    let student = await Student.findOne({ email: studentData.email });
+
+                    if (student) {
+                        student.classroom.push(classroom._id);
+                        await student.save();
+                    } else {
+                        student = await Student.create({
+                            regNo: studentData.regno || studentData.regNo,
+                            email: studentData.email,
+                            classroom: [classroom._id]
+                        });
+                    }
                     return student._id;
                 })
             );
@@ -108,6 +144,11 @@ exports.editClassRoom = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("EDIT CLASSROOM ERROR:", error);
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyValue)[0];
+            return res.status(400).json({ error: `An entry with this ${field} already exists.` });
+        }
         res.status(500).json({ error: error.message });
     }
 };

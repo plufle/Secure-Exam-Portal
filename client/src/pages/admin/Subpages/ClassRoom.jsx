@@ -73,20 +73,18 @@ function ClassRoom() {
             req.classroomId = selectedClassroom;
             editClassroom(req)
                 .then(res => {
-                    console.log(res);
                     fetchClassrooms();
                 })
                 .catch(err => {
-                    console.log(err);
+                    // silent or handle error UI
                 });
         } else {
             addClassroom(req)
                 .then(res => {
-                    console.log(res.data);
                     fetchClassrooms();
                 })
                 .catch(err => {
-                    console.log(err);
+                    // silent or handle error UI
                 });
         }
     };
@@ -95,11 +93,10 @@ function ClassRoom() {
         if (window.confirm("Are you sure you want to delete this classroom?")) {
             deleteClassroom(classroomId)
                 .then(res => {
-                    console.log(res);
                     fetchClassrooms();
                 })
                 .catch(err => {
-                    console.log(err);
+                    // silent or handle error UI
                 });
         }
     };
