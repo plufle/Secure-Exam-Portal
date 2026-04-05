@@ -40,7 +40,23 @@ function Dashboard() {
             
         // Fetch tests
         getTests()
-            .then(data => setTests(data.tests || []))
+            .then(data => {
+                const fetchedTests = data.tests || [];
+                const activeTests = fetchedTests.filter(test => {
+                    if (!test.date) return true;
+                    try {
+                        const dateStr = new Date(test.date).toISOString().split('T')[0];
+                        const timeStr = test.time || "00:00";
+                        const duration = parseInt(test.duration) || 0;
+                        const testEndDate = new Date(`${dateStr}T${timeStr}`);
+                        testEndDate.setMinutes(testEndDate.getMinutes() + duration);
+                        return new Date() <= testEndDate;
+                    } catch (e) {
+                         return true;
+                    }
+                });
+                setTests(activeTests);
+            })
             .catch(err => console.error("Failed to fetch tests", err));
     }, []);
 

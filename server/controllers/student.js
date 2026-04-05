@@ -35,18 +35,16 @@ exports.submitExam = async (req, res) => {
                 // Assuming format where answer might be an index or the string itself. 
                 // Wait, need to check AdminTest creation. If it uses index or not. Taking 10 marks per question for now.
                 if (correctAnswer == ansIdx || (typeof correctAnswer === 'string' && correctAnswer === testQuestions[questionIndex].options[ansIdx])) {
-                    score += 10;
+                    score += parseInt(testQuestions[questionIndex].marks) || 0;
                 }
             }
         }
 
-        const newResult = await Result.create({
-            studentId: student._id,
-            testId,
-            score,
-            answers,
-            flagged
-        });
+        const newResult = await Result.findOneAndUpdate(
+            { studentId: student._id, testId },
+            { score, answers, flagged },
+            { new: true, upsert: true }
+        );
 
         res.status(201).json({ message: "Exam submitted successfully", score: newResult.score });
     } catch (error) {

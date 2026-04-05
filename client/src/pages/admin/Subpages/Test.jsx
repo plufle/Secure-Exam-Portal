@@ -5,6 +5,7 @@ import { getClassroom, addTest, getTests, editTest, deleteTest } from "../../../
 function Test() {
     const [showAddForm, setShowAddForm] = useState(false);
     const [showViewEditForm, setShowViewEditForm] = useState(false);
+    const [activeTab, setActiveTab] = useState("active");
 
     // Form State for Adding
     const [testName, setTestName] = useState("");
@@ -185,6 +186,11 @@ function Test() {
                 <div className="test-header-right">
                     <button className="test-header-button" onClick={() => setShowAddForm(true)}>Add Test</button>
                 </div>
+            </div>
+
+            <div style={{display: 'flex', gap: '2rem', padding: '0 2rem', borderBottom: '1px solid #ddd', marginBottom: '2rem'}}>
+                <span onClick={() => setActiveTab('active')} style={{padding: '1rem', cursor: 'pointer', fontWeight: activeTab === 'active' ? 700 : 500, color: activeTab === 'active' ? '#0A6E7C' : '#666', borderBottom: activeTab === 'active' ? '2px solid #0A6E7C' : 'none'}}>Active Tests</span>
+                <span onClick={() => setActiveTab('archived')} style={{padding: '1rem', cursor: 'pointer', fontWeight: activeTab === 'archived' ? 700 : 500, color: activeTab === 'archived' ? '#0A6E7C' : '#666', borderBottom: activeTab === 'archived' ? '2px solid #0A6E7C' : 'none'}}>Archived Tests</span>
             </div>
 
             {/* Add Test Form Overlay */}
@@ -463,22 +469,39 @@ function Test() {
                         </tr>
                     </thead>
                     <tbody>
-                        {tests.map((test) => (
-                            <tr key={test._id} className="test-table-tr">
-                                <td className="test-table-td">{test.testName}</td>
-                                <td className="test-table-td">{test.classroomId?.name || test.classroomId || 'N/A'}</td>
-                                <td className="test-table-td">Scheduled</td>
-                                <td className="test-table-td">{test.date ? new Date(test.date).toLocaleDateString() : 'N/A'}</td>
-                                <td className="test-table-td">{test.time}</td>
-                                <td className="test-table-td">
-                                    <div className="button-container">
-                                        <button className="test-td-button" onClick={() => handleViewEdit(test, true)}>View</button>
-                                        <button className="test-td-button" onClick={() => handleViewEdit(test, false)}>Edit</button>
-                                        <button className="test-td-button delete" onClick={() => handleDeleteTest(test._id)}><MdDelete /></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                        {(() => {
+                            const isTestArchived = (test) => {
+                                if (!test.date) return false;
+                                try {
+                                    const dateStr = new Date(test.date).toISOString().split('T')[0];
+                                    const timeStr = test.time || "00:00";
+                                    const duration = parseInt(test.duration) || 0;
+                                    const testEndDate = new Date(`${dateStr}T${timeStr}`);
+                                    testEndDate.setMinutes(testEndDate.getMinutes() + duration);
+                                    return new Date() > testEndDate;
+                                } catch (e) {
+                                    return false;
+                                }
+                            };
+                            const displayedTests = tests.filter(test => activeTab === 'active' ? !isTestArchived(test) : isTestArchived(test));
+                            
+                            return displayedTests.map((test) => (
+                                <tr key={test._id} className="test-table-tr">
+                                    <td className="test-table-td">{test.testName}</td>
+                                    <td className="test-table-td">{test.classroomId?.name || test.classroomId || 'N/A'}</td>
+                                    <td className="test-table-td">{activeTab === 'active' ? 'Scheduled' : 'Archived'}</td>
+                                    <td className="test-table-td">{test.date ? new Date(test.date).toLocaleDateString() : 'N/A'}</td>
+                                    <td className="test-table-td">{test.time}</td>
+                                    <td className="test-table-td">
+                                        <div className="button-container">
+                                            <button className="test-td-button" onClick={() => handleViewEdit(test, true)}>View</button>
+                                            {activeTab === 'active' && <button className="test-td-button" onClick={() => handleViewEdit(test, false)}>Edit</button>}
+                                            <button className="test-td-button delete" onClick={() => handleDeleteTest(test._id)}><MdDelete /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ));
+                        })()}
                     </tbody>
                 </table>
             </div>

@@ -109,3 +109,13 @@ export async function deleteTest(testId) {
         throw error;
     }
 }
+
+export async function getAdminReports() {
+    try {
+        const response = await axios.get(API_URL + "/getAdminReports", getAuthHeaders());
+        return response.data;
+    } catch (error) {
+        console.error("Error getting admin reports:", error);
+        throw error;
+    }
+}

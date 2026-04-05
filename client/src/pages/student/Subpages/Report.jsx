@@ -16,7 +16,11 @@ const Reports = ({ onOpenReport }) => {
         
         if (data.results) {
             const formattedResults = data.results.map(res => {
-                const total = res.testId?.totalMarks || 100;
+                let dynamicTotal = 0;
+                if (res.testId?.questions) {
+                    res.testId.questions.forEach(q => dynamicTotal += parseInt(q.marks) || 0);
+                }
+                const total = dynamicTotal || res.testId?.totalMarks || 100;
                 const accuracy = Math.round((res.score / total) * 100) || 0;
                 return {
                     id: res._id,

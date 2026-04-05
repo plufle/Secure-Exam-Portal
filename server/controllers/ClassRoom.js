@@ -1,6 +1,7 @@
 const ClassRoom = require("../models/ClassRoom");
 const Student = require("../models/StudentSchema");
 const Test = require("../models/Test");
+const Result = require("../models/Result");
 const { encrypt } = require("../utils/crypto");
 
 exports.addClassRoom = async (req, res) => {
@@ -221,6 +222,29 @@ exports.deleteTest = async (req, res) => {
         res.status(200).json({ message: "Test deleted successfully", test });
     } catch (error) {
         console.error("DELETE TEST ERROR:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getAdminReports = async (req, res) => {
+    try {
+        const tests = await Test.find().populate("classroomId", "name");
+        
+        // Fetch all results, populate student details
+        const results = await Result.find()
+            .populate("studentId", "email regNo name");
+
+        const adminReports = tests.map(test => {
+            const testResults = results.filter(r => r.testId && r.testId.toString() === test._id.toString());
+            return {
+                test,
+                results: testResults
+            };
+        });
+
+        res.status(200).json({ reports: adminReports });
+    } catch (error) {
+        console.error("GET ADMIN REPORTS ERROR:", error);
         res.status(500).json({ error: error.message });
     }
 };

@@ -32,7 +32,6 @@ const ActiveExam = ({ exam, onSubmit }) => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleSubmitClicked();
           return 0;
         }
         return prev - 1;
@@ -47,6 +46,12 @@ const ActiveExam = ({ exam, onSubmit }) => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      handleSubmitClicked();
+    }
+  }, [timeLeft]);
 
   const formatTime = (seconds) => {
     const h = Math.floor(seconds / 3600);
@@ -95,7 +100,11 @@ const ActiveExam = ({ exam, onSubmit }) => {
         });
         const data = await res.json();
         
-        const total = exam?.rawTest?.totalMarks || 100;
+        let dynamicTotal = 0;
+        if (exam?.rawTest?.questions) {
+            exam.rawTest.questions.forEach(q => dynamicTotal += parseInt(q.marks) || 0);
+        }
+        const total = dynamicTotal || exam?.rawTest?.totalMarks || 100;
         const finalScore = data.score != null ? data.score : 0;
         onSubmit({ 
             score: `${finalScore}/${total}`, 
@@ -232,9 +241,6 @@ const ActiveExam = ({ exam, onSubmit }) => {
               <span className="text-muted">Remaining</span>
               <span style={{fontWeight: 700}}>{questions.length - answeredCount} Questions</span>
             </div>
-            <button className="btn-outline w-full" style={{fontWeight: 600}}>
-              Review All Responses
-            </button>
           </div>
         </div>
       </main>
