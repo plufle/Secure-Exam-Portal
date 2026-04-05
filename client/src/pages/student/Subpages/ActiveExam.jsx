@@ -1,36 +1,58 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, Flag, Clock, CheckSquare } from 'lucide-react';
 
-const mockQuestions = Array.from({ length: 50 }, (_, i) => ({
-  id: `q${i + 1}`,
-  text: i === 13 ? "Which of the following best describes the principle of least astonishment in UI design?" : `Sample question ${i + 1} text goes here?`,
-  options: [
-    `A) Systems should behave in a way that is consistent with user expectations`,
-    `B) UI elements should be as visually complex as possible to engage power users`,
-    `C) Placement of navigation elements should be randomized to test user recall`,
-    `D) Documentation should be kept minimal to encourage exploratory learning`
-  ],
-  correctAnswer: 0
-}));
-
 const ActiveExam = ({ exam, onSubmit }) => {
-  const [currentIdx, setCurrentIdx] = useState(13);
+  const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [flagged, setFlagged] = useState(new Set([0]));
-  const [timeLeft, setTimeLeft] = useState(45 * 60 + 22);
+  const [flagged, setFlagged] = useState(new Set());
+  
+  const getInitialTime = () => {
+    if (!exam || !exam.rawTest || !exam.rawTest.duration) return 45 * 60;
+    const p = parseInt(exam.rawTest.duration, 10);
+    return isNaN(p) ? 45 * 60 : p * 60;
+  };
+  const [timeLeft, setTimeLeft] = useState(getInitialTime());
+  
+  const questions = exam?.rawTest?.questions || [];
 
   useEffect(() => {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(err => console.log("Fullscreen request failed:", err));
+    }
+    
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        alert("Warning: Please return to fullscreen mode to continue your exam.");
+      }
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
     const timer = setInterval(() => {
-      setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleSubmitClicked();
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
-    return () => clearInterval(timer);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(err => console.log("Exit fullscreen error:", err));
+      }
+    };
   }, []);
 
   const formatTime = (seconds) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${h.toString().padStart(2, '0')} : ${m.toString().padStart(2, '0')} : ${s.toString().padStart(2, '0')}s`;
+    return `${h > 0 ? h.toString().padStart(2, '0') + ' : ' : ''}${m.toString().padStart(2, '0')} : ${s.toString().padStart(2, '0')}s`;
   };
 
   const handleSelectOption = (optIdx) => {
@@ -47,7 +69,7 @@ const ActiveExam = ({ exam, onSubmit }) => {
   };
 
   const prevQuestion = () => setCurrentIdx(p => Math.max(0, p - 1));
-  const nextQuestion = () => setCurrentIdx(p => Math.min(mockQuestions.length - 1, p + 1));
+  const nextQuestion = () => setCurrentIdx(p => Math.min(questions.length - 1, p + 1));
 
   const getStatusColor = (idx) => {
     if (idx === currentIdx) return 'var(--primary)';
@@ -57,11 +79,37 @@ const ActiveExam = ({ exam, onSubmit }) => {
   };
 
   const answeredCount = Object.keys(answers).length;
-  const progressPercent = Math.round((answeredCount / mockQuestions.length) * 100);
+  const progressPercent = questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
 
-  const handleSubmitClicked = () => {
-    const score = Object.keys(answers).length * 10;
-    onSubmit({ score, answers, flagged: Array.from(flagged) });
+  const handleSubmitClicked = async () => {
+    try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/student/submitExam", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            body: JSON.stringify({
+                testId: exam?.rawTest?._id,
+                answers: answers,
+                flagged: Array.from(flagged)
+            })
+        });
+        const data = await res.json();
+        
+        const total = exam?.rawTest?.totalMarks || 100;
+        const finalScore = data.score != null ? data.score : 0;
+        onSubmit({ 
+            score: `${finalScore}/${total}`, 
+            accuracy: `${Math.round((finalScore / total) * 100) || 0}%`,
+            percentile: 'N/A',
+            examTitle: exam?.title,
+            rawTest: exam?.rawTest,
+            answers: answers,
+            rawScore: finalScore,
+            rawTotal: total
+        });
+    } catch (err) {
+        console.error("Error submitting exam:", err);
+    }
   };
 
   return (
@@ -78,7 +126,7 @@ const ActiveExam = ({ exam, onSubmit }) => {
         <div style={styles.progressSection}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', fontWeight: 600, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '0.32rem' }}>
             <span>Overall Progress</span>
-            <span style={{ color: 'var(--text-muted)' }}>{answeredCount}/{mockQuestions.length}</span>
+            <span style={{ color: 'var(--text-muted)' }}>{answeredCount}/{questions.length}</span>
           </div>
           <div style={styles.progressBarBg}>
             <div style={{ ...styles.progressBarFill, width: `${progressPercent}%` }} />
@@ -90,7 +138,6 @@ const ActiveExam = ({ exam, onSubmit }) => {
         </div>
 
         <div className="flex gap-4 items-center">
-          <button style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Save Progress</button>
           <button className="btn-primary" onClick={handleSubmitClicked}>Submit Exam</button>
         </div>
       </header>
@@ -102,11 +149,11 @@ const ActiveExam = ({ exam, onSubmit }) => {
           </div>
           <h2 style={{ fontSize: '2.88rem', fontWeight: 700, marginBottom: '2.4rem', marginTop: 0 }}>Question {currentIdx + 1}</h2>
           <p style={{ fontSize: '1.76rem', marginBottom: '4rem', color: 'var(--text-main)', margin: 0 }}>
-            {mockQuestions[currentIdx].text}
+            {questions.length > 0 && questions[currentIdx] ? questions[currentIdx].question : "No question available."}
           </p>
 
           <div style={styles.optionsList}>
-            {mockQuestions[currentIdx].options.map((option, idx) => (
+            {questions.length > 0 && questions[currentIdx] && questions[currentIdx].options && questions[currentIdx].options.map((option, idx) => (
               <div 
                 key={idx} 
                 style={{
@@ -139,7 +186,7 @@ const ActiveExam = ({ exam, onSubmit }) => {
               >
                 <Flag size={18} fill={flagged.has(currentIdx) ? "#F39C12" : "none"} /> Flag for Review
               </button>
-              <button onClick={nextQuestion} className="btn-primary flex items-center gap-2" disabled={currentIdx === mockQuestions.length - 1}>
+              <button onClick={nextQuestion} className="btn-primary flex items-center gap-2" disabled={currentIdx === questions.length - 1}>
                 Next Question <ArrowRight size={18} />
               </button>
             </div>
@@ -156,9 +203,9 @@ const ActiveExam = ({ exam, onSubmit }) => {
           </div>
 
           <div style={styles.grid}>
-            {mockQuestions.map((q, idx) => (
+            {questions.map((q, idx) => (
               <button 
-                key={q.id}
+                key={idx}
                 onClick={() => setCurrentIdx(idx)}
                 style={{
                   ...styles.gridItem,
@@ -183,7 +230,7 @@ const ActiveExam = ({ exam, onSubmit }) => {
             </div>
             <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '2.4rem', fontSize: '1.36rem'}}>
               <span className="text-muted">Remaining</span>
-              <span style={{fontWeight: 700}}>{mockQuestions.length - answeredCount} Questions</span>
+              <span style={{fontWeight: 700}}>{questions.length - answeredCount} Questions</span>
             </div>
             <button className="btn-outline w-full" style={{fontWeight: 600}}>
               Review All Responses

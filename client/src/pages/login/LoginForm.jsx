@@ -64,7 +64,14 @@ function LoginForm() {
                     <Input type="password" placeholder="Confirm Password" label="Confirm Password" value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)}/>
                     <Button type="submit" text="Change Password" width="100%" onClick={handleChangePassword}/>
                     <div style={{ marginTop: "10px", textAlign: "center" }}>
-                        <button type="button" className="btn-link" style={{background: 'none', border: 'none', color: 'blue', textDecoration: 'underline', cursor: 'pointer', padding: 0}} onClick={() => setIsPasswordChangeMode(false)}>Back to Login</button>
+                        <button 
+                            type="button" 
+                            className="btn-link" 
+                            style={{background: 'none', border: 'none', color: 'blue', textDecoration: 'underline', cursor: 'pointer', padding: 0}} 
+                            onClick={() => setIsPasswordChangeMode(false)}
+                        >
+                            Back to Login
+                        </button>
                     </div>
                 </div>
             </div>

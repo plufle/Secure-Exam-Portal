@@ -1,18 +1,52 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, BookOpen, Calendar, ChevronRight } from 'lucide-react';
 
-const availableExams = [
-  { id: 'exam_01', title: 'Quantitative Analysis Exam', subject: 'MT-402', duration: '45 mins', questions: 50, date: 'Oct 24, 2026', status: 'Scheduled' },
-  { id: 'exam_02', title: 'Advanced Mathematics', subject: 'MT-505', duration: '90 mins', questions: 100, date: 'Oct 26, 2026', status: 'Available' }
-];
-
 const Dashboard = ({ user, onSelectExam }) => {
+  const [availableExams, setAvailableExams] = useState([]);
+
+  useEffect(() => {
+    const fetchExams = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const examRes = await fetch("http://localhost:5000/api/student/exams", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const examData = await examRes.json();
+        
+        const resultRes = await fetch("http://localhost:5000/api/student/results", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const resultData = await resultRes.json();
+        const completedTestIds = new Set(resultData.results?.map(r => r.testId?._id) || []);
+
+        if (examData.tests) {
+            const formatted = examData.tests
+                .filter(test => !completedTestIds.has(test._id))
+                .map(test => ({
+                    id: test._id,
+                    title: test.testName || 'Untitled Exam',
+                    subject: test.classroomId?.name || 'Subject',
+                    duration: test.duration ? `${test.duration} mins` : 'N/A',
+                    questions: test.questions ? test.questions.length : 0,
+                    date: test.date ? new Date(test.date).toLocaleDateString() : 'N/A',
+                    status: 'Available',
+                    rawTest: test
+                }));
+            setAvailableExams(formatted);
+        }
+      } catch (err) {
+        console.error("Error fetching exams:", err);
+      }
+    };
+    fetchExams();
+  }, []);
+
   return (
     <div className="student-dashboard-app">
       <main className="container" style={styles.main}>
         <div style={styles.welcomeSection}>
           <h1 style={{fontSize: '3.2rem', fontWeight: 700}}>Welcome back, {user?.name.split('@')[0]}</h1>
-          <p className="text-muted">You have 2 upcoming exams scheduled for this week.</p>
+          <p className="text-muted">You have {availableExams.length} upcoming exams scheduled.</p>
         </div>
 
         <h2 style={{fontSize: '1.92rem', fontWeight: 600, marginBottom: '1.6rem'}}>Available Exams</h2>

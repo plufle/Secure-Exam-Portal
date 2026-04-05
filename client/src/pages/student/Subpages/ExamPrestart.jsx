@@ -1,12 +1,41 @@
-import React from 'react';
-import { ArrowLeft, Clock, AlertTriangle, CheckCircle2, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Clock, AlertTriangle, CheckCircle2, ShieldCheck, Lock } from 'lucide-react';
 
 const ExamPrestart = ({ exam, onStart, onBack }) => {
+  const [canStart, setCanStart] = useState(false);
+  const [startTimeStr, setStartTimeStr] = useState("");
+
+  useEffect(() => {
+    if (!exam || !exam.rawTest) return;
+    
+    try {
+        const dateStr = new Date(exam.rawTest.date).toISOString().split('T')[0];
+        const timeStr = exam.rawTest.time || "00:00";
+        // Handle timezone issues generally by constructing Date from ISO string
+        const examDateTime = new Date(`${dateStr}T${timeStr}`);
+        
+        setStartTimeStr(examDateTime.toLocaleString(undefined, {
+            weekday: 'short', month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        }));
+
+        const checkTime = () => {
+            setCanStart(new Date() >= examDateTime);
+        };
+        
+        checkTime();
+        const interval = setInterval(checkTime, 10000); // Check every 10s
+        return () => clearInterval(interval);
+    } catch (err) {
+        console.error("Error parsing exam date:", err);
+        setCanStart(true);
+    }
+  }, [exam]);
+
   if (!exam) return null;
 
   return (
     <div className="student-dashboard-app flex-col">
-      {/* Basic header */}
       <header className="card" style={styles.header}>
         <button onClick={onBack} className="btn-outline" style={{display: 'flex', alignItems: 'center', gap: '0.8rem', border: 'none', color: 'var(--text-muted)'}}>
           <ArrowLeft size={18} /> Back to Dashboard
@@ -44,7 +73,9 @@ const ExamPrestart = ({ exam, onStart, onBack }) => {
             </h3>
             <ul style={styles.list}>
               <li>Ensure you have a stable internet connection before starting.</li>
-              <li>Do not refresh the page or navigate away once the exam begins.</li>
+              <li>Please prepare your physical workspace by clearing your desk of unauthorized materials.</li>
+              <li>You may be required to share your screen and webcam to verify exam integrity.</li>
+              <li>Any attempt to access unauthorized web resources will result in automatic termination.</li>
               <li>This is a secure browser session. Attempts to switch tabs may be recorded.</li>
               <li>You can flag questions to review them later before final submission.</li>
               <li>Once you click submit, you cannot change your answers.</li>
@@ -52,9 +83,15 @@ const ExamPrestart = ({ exam, onStart, onBack }) => {
           </div>
 
           <div style={styles.actionSection}>
-            <button className="btn-primary" style={styles.startButton} onClick={onStart}>
-              Start Exam Now
-            </button>
+            {canStart ? (
+                <button className="btn-primary" style={styles.startButton} onClick={onStart}>
+                  Start Exam Now
+                </button>
+            ) : (
+                <div style={{...styles.startButton, background: 'var(--border)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'not-allowed', padding: '1.6rem 2.4rem', fontWeight: 600}}>
+                    <Lock size={20} /> Opens on {startTimeStr}
+                </div>
+            )}
           </div>
         </div>
       </main>

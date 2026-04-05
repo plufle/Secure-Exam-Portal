@@ -38,12 +38,7 @@ function StudentDashboard() {
     };
 
     const handleOpenReport = (report) => {
-        setExamResults({
-            score: report.score,
-            accuracy: report.accuracy,
-            percentile: report.percentile,
-            examTitle: report.examTitle
-        });
+        setExamResults({ ...report });
         setActivePage('results');
     };
 

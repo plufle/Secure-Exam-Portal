@@ -3,6 +3,7 @@
     grid-template-columns: 26rem 1fr;
     grid-template-rows: 6rem 1fr;     
     height: 100vh;
+    overflow: hidden;
 }
 
 .sidebar {
@@ -149,4 +150,5 @@
 .main-content {
     background-color: #FCFCFC;
     padding: 20px;
+    overflow-y: auto;
 }

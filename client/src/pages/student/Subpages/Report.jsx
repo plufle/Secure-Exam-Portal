@@ -1,13 +1,62 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileBarChart2, ChevronRight, TrendingUp } from 'lucide-react';
 
-const previousReports = [
-  { id: 'rep_01', examTitle: 'Quantitative Analysis Exam', subject: 'MT-402', date: 'Just now', score: '450/500', accuracy: '90%', percentile: '98.5th' },
-  { id: 'rep_02', examTitle: 'Introduction to Algorithms', subject: 'CS-101', date: 'Aug 15, 2026', score: '85/100', accuracy: '85%', percentile: '82.0th' },
-  { id: 'rep_03', examTitle: 'Data Structures Practicum', subject: 'CS-201', date: 'Sep 10, 2026', score: '92/100', accuracy: '92%', percentile: '95.1th' }
-];
-
 const Reports = ({ onOpenReport }) => {
+  const [reports, setReports] = useState([]);
+  const [stats, setStats] = useState({ avgScore: 0, completed: 0, subjects: 0 });
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/student/results", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.results) {
+            const formattedResults = data.results.map(res => {
+                const total = res.testId?.totalMarks || 100;
+                const accuracy = Math.round((res.score / total) * 100) || 0;
+                return {
+                    id: res._id,
+                    examTitle: res.testId?.testName || 'Untitled Exam',
+                    subject: res.testId?.classroomId?.name || 'Subject',
+                    date: new Date(res.submittedAt).toLocaleDateString(),
+                    score: `${res.score != null ? res.score : 0}/${total}`,
+                    accuracy: `${accuracy}%`,
+                    percentile: 'N/A', // Percentile mock value
+                    rawScore: res.score != null ? res.score : 0,
+                    rawTotal: total,
+                    subjectRaw: res.testId?.classroomId?.name,
+                    answers: res.answers,
+                    rawTest: res.testId
+                };
+            });
+            setReports(formattedResults.reverse());
+            
+            // Calculate stats
+            if (formattedResults.length > 0) {
+                let totalAccuracy = 0;
+                const uniqueSubjects = new Set();
+                formattedResults.forEach(r => {
+                    totalAccuracy += parseInt(r.accuracy);
+                    uniqueSubjects.add(r.subjectRaw);
+                });
+                setStats({
+                    avgScore: Math.round(totalAccuracy / formattedResults.length),
+                    completed: formattedResults.length,
+                    subjects: uniqueSubjects.size
+                });
+            }
+        }
+      } catch (err) {
+        console.error("Error fetching results:", err);
+      }
+    };
+    fetchResults();
+  }, []);
+
   return (
     <div className="student-dashboard-app">
       <main className="container" style={styles.main}>
@@ -19,22 +68,22 @@ const Reports = ({ onOpenReport }) => {
         <div style={{ display: 'flex', gap: '2.4rem', marginBottom: '4rem' }}>
           <div className="card" style={{ flex: 1, padding: '2.4rem', background: 'var(--primary)', color: 'white' }}>
             <div style={{ fontSize: '1.28rem', fontWeight: 600, opacity: 0.8, letterSpacing: '1px' }}>AVERAGE SCORE</div>
-            <div style={{ fontSize: '4rem', fontWeight: 700, margin: '0.8rem 0' }}>89%</div>
+            <div style={{ fontSize: '4rem', fontWeight: 700, margin: '0.8rem 0' }}>{stats.avgScore}%</div>
             <div style={{ fontSize: '1.36rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-              <TrendingUp size={14} /> +3.2% vs Last Month
+              <TrendingUp size={14} /> Analytics based on exams
             </div>
           </div>
           <div className="card" style={{ flex: 1, padding: '2.4rem' }}>
             <div className="text-muted" style={{ fontSize: '1.28rem', fontWeight: 600, letterSpacing: '1px' }}>EXAMS COMPLETED</div>
-            <div style={{ fontSize: '4rem', fontWeight: 700, margin: '0.8rem 0', color: 'var(--text-main)' }}>3</div>
-            <div className="text-muted" style={{ fontSize: '1.36rem' }}>Across 2 Subjects</div>
+            <div style={{ fontSize: '4rem', fontWeight: 700, margin: '0.8rem 0', color: 'var(--text-main)' }}>{stats.completed}</div>
+            <div className="text-muted" style={{ fontSize: '1.36rem' }}>Across {stats.subjects} Subjects</div>
           </div>
         </div>
 
         <h2 style={{ fontSize: '1.92rem', fontWeight: 600, marginBottom: '1.6rem' }}>Generated Reports</h2>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.6rem' }}>
-          {previousReports.map(report => (
+          {reports.map(report => (
             <div 
               key={report.id} 
               className="card" 

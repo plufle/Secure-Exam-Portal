@@ -1,17 +1,62 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, BookOpen, Calendar, ChevronRight, CheckCircle2 } from 'lucide-react';
 
-const availableExams = [
-  { id: 'exam_01', title: 'Quantitative Analysis Exam', subject: 'MT-402', duration: '45 mins', questions: 50, date: 'Oct 24, 2026', status: 'Scheduled' },
-  { id: 'exam_02', title: 'Advanced Mathematics', subject: 'MT-505', duration: '90 mins', questions: 100, date: 'Oct 26, 2026', status: 'Available' }
-];
-
-const completedExams = [
-  { id: 'exam_prev_01', title: 'Introduction to Algorithms', subject: 'CS-101', score: '85/100', date: 'Aug 15, 2026' },
-  { id: 'exam_prev_02', title: 'Data Structures Practicum', subject: 'CS-201', score: '92/100', date: 'Sep 10, 2026' }
-];
-
 const Exams = ({ onSelectExam }) => {
+  const [availableExams, setAvailableExams] = useState([]);
+  const [completedExams, setCompletedExams] = useState([]);
+
+  useEffect(() => {
+    const fetchExamsAndResults = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        
+        const examRes = await fetch("http://localhost:5000/api/student/exams", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const examData = await examRes.json();
+        
+        const resultRes = await fetch("http://localhost:5000/api/student/results", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const resultData = await resultRes.json();
+        
+        const completedTestIds = new Set();
+        if (resultData.results) {
+            const formattedResults = resultData.results.map(res => {
+                completedTestIds.add(res.testId?._id);
+                return {
+                    id: res._id,
+                    title: res.testId?.testName || 'Untitled Exam',
+                    subject: res.testId?.classroomId?.name || 'Subject',
+                    score: `${res.score}/${res.testId?.totalMarks || 100}`,
+                    date: new Date(res.submittedAt).toLocaleDateString()
+                };
+            });
+            setCompletedExams(formattedResults);
+        }
+
+        if (examData.tests) {
+            const formattedExams = examData.tests
+                .filter(test => !completedTestIds.has(test._id))
+                .map(test => ({
+                    id: test._id,
+                    title: test.testName || 'Untitled Exam',
+                    subject: test.classroomId?.name || 'Subject',
+                    duration: test.duration ? `${test.duration} mins` : 'N/A',
+                    questions: test.questions ? test.questions.length : 0,
+                    date: test.date ? new Date(test.date).toLocaleDateString() : 'N/A',
+                    status: 'Available',
+                    rawTest: test
+                }));
+            setAvailableExams(formattedExams);
+        }
+      } catch (err) {
+        console.error("Error fetching exams:", err);
+      }
+    };
+    fetchExamsAndResults();
+  }, []);
+
   return (
     <div className="student-dashboard-app">
       <main className="container" style={styles.main}>
