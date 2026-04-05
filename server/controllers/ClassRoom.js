@@ -20,6 +20,7 @@ exports.addClassRoom = async (req, res) => {
                     student = await Student.create({
                         regNo: studentData.regno || studentData.regNo,
                         email: studentData.email,
+                        password: studentData.regno || studentData.regNo,
                         classroom: [classroom._id]
                     });
                 }
@@ -128,6 +129,7 @@ exports.editClassRoom = async (req, res) => {
                         student = await Student.create({
                             regNo: studentData.regno || studentData.regNo,
                             email: studentData.email,
+                            password: studentData.regno || studentData.regNo,
                             classroom: [classroom._id]
                         });
                     }

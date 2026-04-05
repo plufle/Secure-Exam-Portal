@@ -17,6 +17,18 @@ const studentSchema = new mongoose.Schema({
     get: decrypt
   },
 
+  password: {
+    type: String,
+    required: true,
+    set: encrypt,
+    get: decrypt
+  },
+
+  isFirstLogin: {
+    type: Boolean,
+    default: true
+  },
+
   classroom: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "ClassRoom"
